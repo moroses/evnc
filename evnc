@@ -95,8 +95,9 @@ function status() {
 	while [ $# -ne 0 ]; do
 		local VNC_NUMBER=,VNC_RES_HOR=,VNC_RES_VER=;
 		local state=,pid=;
-		if [ -f "~${1}/.evnc" ]; then
-			source "~${1}/.evnc";
+                local conf="`eval echo ~${1}/.evnc`";
+		if [ -f "${conf}" ]; then
+			source "${conf}";
 			if [ -f "/tmp/.X${VNC_NUMBER}-lock" ]; then
 				pid=$(</tmp/.X${VNC_NUMBER}-lock);
 			fi
@@ -116,7 +117,7 @@ function status() {
 						#						"W") # paging
 						#						"X") # dead
 						#						"Z") # defunct, zombie
-						D|T|t|W|X|Z)
+						D|T|t|W|X|Z|*)
 						echo -e "VNC server for ${1} is not running or misbehaving.";
 						break
 						;;
@@ -154,12 +155,13 @@ function start() {
 	fi
 	while [ $# -ne 0 ]; do
 		local VNC_NUMBER=,VNC_RES_HOR=,VNC_RES_VER=;
-		if [ -f "~${1}/.evnc" ]; then
-			source "~${1}/.evnc";
-			if [ -f "/tmp/.X${VNC_NUMBERR}-lock" ]; then
+                local conf="`eval echo ~${1}/.evnc`";
+		if [ -f "${conf}" ]; then
+			source "${conf}";
+			if [ -f "/tmp/.X${VNC_NUMBER}-lock" ]; then
 				echo -e "VNC server for ${1} is currently running, can't start again.";
 			else
-				vncserver :${VNC_NUMBER} -geometry ${VNC_RES_HOR}x${VNC_RES_VER} -localhost
+				vncserver :${VNC_NUMBER} -geometry ${VNC_RES_HOR}x${VNC_RES_VER} -localhost &>> "${conf}.log";
 				if [ $? ]; then
 					echo -e "Started VNC server for ${1}, VNC number is: ${VNC_NUMBER}";
 				else
@@ -196,12 +198,13 @@ function stop() {
 	fi
 	while [ $# -ne 0 ]; do
 		local VNC_NUMBER=,VNC_RES_HOR=,VNC_RES_VER=;
-		if [ -f "~${1}/.evnc" ]; then
-			source "~${1}/.evnc";
+                local conf="`eval echo ~${1}/.evnc`";
+		if [ -f "${conf}" ]; then
+			source "${conf}";
 			local pid=;
 			if [ -f "/tmp/.X${VNC_NUMBER}-lock" ]; then
 				pid=$(</tmp/.X${VNC_NUMBER}-lock);
-				vncserver -kill :${VNC_NUMBER}
+				vncserver -kill :${VNC_NUMBER} &>> "${conf}.log";
 				if [ $? ]; then
 					echo -e "VNC server for ${1} (#${VNC_NUMBER}) closed.";
 					rm -f "/tmp/.X${VNC_NUMBER}-lock";
@@ -210,8 +213,8 @@ function stop() {
 				fi
 			fi
 			local state=$(ps --no-headers -o state ${pid});
-			if [ $state ]; then
-				kill -9 ${pid};
+			if [ "${state}" ]; then
+				kill -9 ${pid} &>> "${conf}.log";
 				echo -e "VNC server for ${1} (#${VNC_NUMBER}) killed.";
 			fi
 		else
