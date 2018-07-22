@@ -12,7 +12,10 @@ VNC_NUMBER={0-99};
 VNC_RES_HOR={Number};
 VNC_RES_VER={Number};
 ```
-That is all for now.
+
+## Usage:
+The main operation of the script is quite easy.
+Each user should a configure file in his home directory called `.evnc` in accordance to the subsection above (#config-file-scheme)[(here)]
 
 # TODO:
 
