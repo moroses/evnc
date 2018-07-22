@@ -16,6 +16,7 @@ That is all for now.
 
 # TODO:
 
-- [ ] Initial script
-- [ ] Alpha testing
+- [x] Initial script
+- [x] Alpha testing
+- [ ] Beta testing
 - [ ] Done
