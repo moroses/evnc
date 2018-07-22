@@ -1,0 +1,267 @@
+#!/bin/bash
+
+## This script should manage VNC connections in the sense of running/stopping/status check/reboot.
+
+# skeleton:
+
+####################################
+####### Config file scheme #########
+## VNC_NUMBER='Double digit number'#
+## RES_HOR='Horizontal resolution'##
+## RES_VER='Vertical resolution'####
+####################################
+
+# TODO: status check, verify when to force close and whether it's running at all.
+
+COMMANDS=()
+
+# getSelection -
+# search - value to search.
+# array - array to search in.
+function getSelection() {
+	if [ $# -lt 2 ]; then
+		echo -e "ERRORORORORORORO" >&2;
+		exit;
+	fi
+
+	local s="${1}";
+	shift;
+	for cmd in "${@}"; do
+		if [ "${cmd}" = "${s}" ]; then
+			echo "${cmd}";
+			return 0;
+		fi
+	done;
+	echo "";
+	return 1;
+}
+
+function main() {
+	if [ "${1}" = "--help" ]; then
+		main_help;
+		return 0;
+	elif [ "${1}" = "--version" ]; then
+		version;
+		return 0;
+	fi
+
+	local cmd=$(getSelection "${1}" "${COMMANDS[@]}");
+	shift;
+
+	if [ ! $cmd ]; then
+		echo -e "No command selected!";
+		main_help;
+		return 0;
+	fi
+
+	if [ "${1}" = "--help" ]; then
+		"${cmd}_help";
+	elif [ $# -eq 0 ]; then
+		$cmd ${USER};
+	else
+		$cmd "${@}";
+	fi
+	return 0;
+}
+
+function main_help() {
+	echo -e "Welcome to ${0}!."
+	echo -e "The available commands are:";
+	for cmd in "${COMMANDS[@]}"; do
+		echo -e "${cmd}:";
+		"${cmd}_help" --one-liner;
+		echo -e "";
+	done;
+	echo -e "You can call ``${0} --help`` for this help message."
+	echo -e "All commands can receive ``--help`` as an arguments for a more detailed help.";
+	echo -e "``--version`` will output the current script version.";
+	return 0;
+}
+
+function version() {
+	echo -e "${0} version:";
+	echo -e "1.0";
+	echo -e "";
+}
+
+COMMANDS+=('status');
+
+function status() {
+	if [ $# -eq 0 ]; then
+		echo -e "Bad parameter for status function." >&2;
+		status_help;
+		exit 1;
+	fi
+	while [ $# -ne 0 ]; do
+		local VNC_NUMBER=,VNC_RES_HOR=,VNC_RES_VER=;
+		local state=,pid=;
+		if [ -f "~${1}/.evnc" ]; then
+			source "~${1}/.evnc";
+			if [ -f "/tmp/.X${VNC_NUMBER}-lock" ]; then
+				pid=$(</tmp/.X${VNC_NUMBER}-lock);
+			fi
+			state=$(ps --no-headers -o state ${pid});
+			if [ "${state}" ]; then
+				case "${state}" in
+					#					"I") # idle kernel thread
+						#						"R") # running
+						#						"S") # interruptible sleep
+						I|R|S)
+						echo -e "VNC server for ${1} is running.";
+						break
+						;;
+					#					"D") # uninterruptible sleep
+						#						"T") # stopped by job control
+						#						"t") # stopped by debugger
+						#						"W") # paging
+						#						"X") # dead
+						#						"Z") # defunct, zombie
+						D|T|t|W|X|Z)
+						echo -e "VNC server for ${1} is not running or misbehaving.";
+						break
+						;;
+				esac;
+			else
+				echo -e "VNC server for ${1} was not found!.";
+			fi
+		else
+			echo -e "${1} has no config file.";
+		fi
+		shift;
+	done;
+	return;
+}
+
+function status_help() {
+	if [ "${1}" = "--one-liner" ]; then
+		echo -e "\tPrints VNC server status.";
+		return;
+	fi
+
+	echo -e "${0} status [USER LIST]";
+	echo -e "Prints the status of VNC servers for the given user list.";
+	echo -e "If no user list is given, the current user will be used.";
+	return;
+}
+
+COMMANDS+=('start');
+
+function start() {
+	if [ $# -eq 0 ]; then
+		echo -e "Bad parameters for start function." >&2;
+		start_help;
+		exit;
+	fi
+	while [ $# -ne 0 ]; do
+		local VNC_NUMBER=,VNC_RES_HOR=,VNC_RES_VER=;
+		if [ -f "~${1}/.evnc" ]; then
+			source "~${1}/.evnc";
+			if [ -f "/tmp/.X${VNC_NUMBERR}-lock" ]; then
+				echo -e "VNC server for ${1} is currently running, can't start again.";
+			else
+				vncserver :${VNC_NUMBER} -geometry ${VNC_RES_HOR}x${VNC_RES_VER} -localhost
+				if [ $? ]; then
+					echo -e "Started VNC server for ${1}, VNC number is: ${VNC_NUMBER}";
+				else
+					echo -e "Failed to start VNC server for ${1}, VNC number should have been: ${VNC_NUMBER}";
+				fi
+			fi
+		else
+			echo -e "${1} does not have a vnc configure file!" >&2;
+		fi
+		shift;
+	done;
+	return;
+}
+
+function start_help() {
+	if [ "${1}" = "--one-liner" ]; then
+		echo -e "\tStart VNC server.";
+		return;
+	fi
+
+	echo -e "${0} start [USER LIST]";
+	echo -e "Starts VNC servers for the given user list."
+	echo -e "If no user list is given, the current user will be used.";
+	return;
+}
+
+COMMANDS+=('stop');
+
+function stop() {
+	if [ $# -eq 0 ]; then
+		echo -e "Bad parameters for stop function." >&2;
+		stop_help;
+		exit;
+	fi
+	while [ $# -ne 0 ]; do
+		local VNC_NUMBER=,VNC_RES_HOR=,VNC_RES_VER=;
+		if [ -f "~${1}/.evnc" ]; then
+			source "~${1}/.evnc";
+			local pid=;
+			if [ -f "/tmp/.X${VNC_NUMBER}-lock" ]; then
+				pid=$(</tmp/.X${VNC_NUMBER}-lock);
+				vncserver -kill :${VNC_NUMBER}
+				if [ $? ]; then
+					echo -e "VNC server for ${1} (#${VNC_NUMBER}) closed.";
+					rm -f "/tmp/.X${VNC_NUMBER}-lock";
+				else
+					echo -e "Hmmm got an error trying to close VNC server for ${1} (#${VNC_SERVER}), will try again.";
+				fi
+			fi
+			local state=$(ps --no-headers -o state ${pid});
+			if [ $state ]; then
+				kill -9 ${pid};
+				echo -e "VNC server for ${1} (#${VNC_NUMBER}) killed.";
+			fi
+		else
+			echo -e "${1} does not have a config file.";
+		fi
+		shift;
+	done;
+	return;
+}
+
+function stop_help() {
+	if [ "${1}" = "--one-liner" ]; then
+		echo -e "\tStops VNC server.";
+		return;
+	fi
+
+	echo -e "${0} stop [USER LIST]";
+	echo -e "Stops VNC servers for the given user list.";
+	echo -e "If no user list is given, the current user will be used.";
+	return;
+}
+
+COMMANDS+=('restart');
+
+function restart() {
+	if [ $# -eq 0 ]; then
+		echo -e "Bad parameters for restart function." >&2;
+		restart_help;
+		exit;
+	fi
+	while [ $# -ne 0 ]; do
+		stop ${1};
+		start ${1};
+		shift;
+	done;
+	return;
+}
+
+function restart_help() {
+	if [ "${1}" = "--one-liner" ]; then
+		echo -e "\tRestart VNC server.";
+		return;
+	fi
+
+	echo -e "${0} restart [USER LIST]";
+	echo -e "Restarts VNC servers for the given user list.";
+	echo -e "If no user list is given, the current user will be used.";
+	return;
+}
+
+main "${@}" || exit 1;
+
+
