@@ -109,7 +109,6 @@ function status() {
 						#						"S") # interruptible sleep
 						I|R|S)
 						echo -e "VNC server for ${1} is running.";
-						break
 						;;
 					#					"D") # uninterruptible sleep
 						#						"T") # stopped by job control
@@ -119,7 +118,6 @@ function status() {
 						#						"Z") # defunct, zombie
 						D|T|t|W|X|Z|*)
 						echo -e "VNC server for ${1} is not running or misbehaving.";
-						break
 						;;
 				esac;
 			else
