@@ -15,7 +15,7 @@ VNC_RES_VER={Number};
 
 ## Usage:
 The main operation of the script is quite easy.
-Each user should a configure file in his home directory called `.evnc` in accordance to the subsection above (#config-file-scheme)[(here)]
+Each user should a configure file in his home directory called `.evnc` in accordance to the subsection above [(here)] (#config-file-scheme)
 
 # TODO:
 
