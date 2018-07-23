@@ -26,5 +26,5 @@ If no `USER LIST` is given the current user will be used.
 
 - [x] Initial script
 - [x] Alpha testing
-- [ ] Beta testing
+- [x] Beta testing
 - [ ] Done
