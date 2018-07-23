@@ -87,48 +87,50 @@ function version() {
 COMMANDS+=('status');
 
 function status() {
-	if [ $# -eq 0 ]; then
-		echo -e "Bad parameter for status function." >&2;
-		status_help;
-		exit 1;
-	fi
-	while [ $# -ne 0 ]; do
-		local VNC_NUMBER=,VNC_RES_HOR=,VNC_RES_VER=;
-		local state=,pid=;
+        if [ $# -eq 0 ]; then
+                echo -e "Bad parameter for status function." >&2;
+                status_help;
+                exit 1;
+        fi
+        while [ $# -ne 0 ]; do
+                local VNC_NUMBER=,VNC_RES_HOR=,VNC_RES_VER=;
+                local state=,pid=;
                 local conf="`eval echo ~${1}/.evnc`";
-		if [ -f "${conf}" ]; then
-			source "${conf}";
-			if [ -f "/tmp/.X${VNC_NUMBER}-lock" ]; then
-				pid=$(</tmp/.X${VNC_NUMBER}-lock);
-			fi
-			state=$(ps --no-headers -o state ${pid});
-			if [ "${state}" ]; then
-				case "${state}" in
-					#					"I") # idle kernel thread
-						#						"R") # running
-						#						"S") # interruptible sleep
-						I|R|S)
-						echo -e "VNC server for ${1} is running.";
-						;;
-					#					"D") # uninterruptible sleep
-						#						"T") # stopped by job control
-						#						"t") # stopped by debugger
-						#						"W") # paging
-						#						"X") # dead
-						#						"Z") # defunct, zombie
-						D|T|t|W|X|Z|*)
-						echo -e "VNC server for ${1} is not running or misbehaving.";
-						;;
-				esac;
-			else
-				echo -e "VNC server for ${1} was not found!.";
-			fi
-		else
-			echo -e "${1} has no config file.";
-		fi
-		shift;
-	done;
-	return;
+                if [ -f "${conf}" ]; then
+                        source "${conf}";
+                        if [ -f "/tmp/.X${VNC_NUMBER}-lock" ]; then
+                                pid=$(</tmp/.X${VNC_NUMBER}-lock);
+                                state=$(ps --no-headers -o state ${pid});
+                                if [ "${state}" ]; then
+                                        case "${state}" in
+                                                #					"I") # idle kernel thread
+                                                        #						"R") # running
+                                                        #						"S") # interruptible sleep
+                                                        I|R|S)
+                                                        echo -e "VNC server for ${1} is running.";
+                                                        ;;
+                                                #					"D") # uninterruptible sleep
+                                                        #						"T") # stopped by job control
+                                                        #						"t") # stopped by debugger
+                                                        #						"W") # paging
+                                                        #						"X") # dead
+                                                        #						"Z") # defunct, zombie
+                                                        D|T|t|W|X|Z|*)
+                                                        echo -e "VNC server for ${1} is not running or misbehaving.";
+                                                        ;;
+                                        esac;
+                                else
+                                        echo -e "VNC server for ${1} was not found!.";
+                                fi
+                        else
+                                echo -e "VNC server for ${1} is probably not running."
+                        fi
+                else
+                        echo -e "${1} has no config file.";
+                fi
+                shift;
+        done;
+        return;
 }
 
 function status_help() {
@@ -167,7 +169,7 @@ function start() {
 				fi
 			fi
 		else
-			echo -e "${1} does not have a vnc configure file!" >&2;
+			echo -e "${1} does not have a VNC configure file!" >&2;
 		fi
 		shift;
 	done;
