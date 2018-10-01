@@ -22,9 +22,13 @@ evnc [status|start|stop|restart] [user list]
 ```
 If no `USER LIST` is given the current user will be used.
 
+# Progress report
+So far, it's all working...
+So... No more beta.
+
 # TODO:
 
 - [x] Initial script
 - [x] Alpha testing
 - [x] Beta testing
-- [ ] Done
+- [x] Done
